@@ -85,7 +85,7 @@ class MetricsCollector: ObservableObject {
 
                     // Thrashing: high swap activity with roughly balanced in/out
                     let isThrashing = swapinRate > 10 && swapoutRate > 10 &&
-                                     abs(swapinRate - swapoutRate) / max(swapinRate, swapoutRate) < 0.5
+                                     abs(swapinRate - swapoutRate) / Swift.max(swapinRate, swapoutRate) < 0.5
 
                     let thrashing = ThrashingMetrics(
                         swapinRate: swapinRate,

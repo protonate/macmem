@@ -17,7 +17,7 @@ struct MetricGaugeView: View {
 
     private var percentage: Double {
         guard max > 0 else { return 0 }
-        return min((value / max) * 100, 100)
+        return Swift.min((value / max) * 100, 100)
     }
 
     private var displayColor: Color {
@@ -58,7 +58,7 @@ struct MetricGaugeView: View {
                 // Progress
                 RoundedRectangle(cornerRadius: 4)
                     .fill(displayColor)
-                    .frame(width: max(CGFloat(percentage) / 100.0 * 200, 0), height: 24)
+                    .frame(width: Swift.max(CGFloat(percentage) / 100.0 * 200, 0), height: 24)
 
                 // Value text
                 Text("\(formatValue(value)) \(unit)")

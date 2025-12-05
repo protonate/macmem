@@ -147,7 +147,7 @@ struct ChartPath: Shape {
 
         let width = rect.width
         let height = rect.height
-        let stepX = width / CGFloat(max(1, data.count - 1))
+        let stepX = width / CGFloat(Swift.max(1, data.count - 1))
 
         var path = Path()
 
