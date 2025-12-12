@@ -13,11 +13,14 @@ class MetricsCollector: ObservableObject {
     @Published var metricsHistory: [SystemMetrics] = []
     @Published var thrashingMetrics: ThrashingMetrics?
     @Published var isCollecting = false
+    @Published var topThrashingProcesses: [ProcessThrashingScore] = []
 
     private var timer: Timer?
     private let pollingInterval: TimeInterval = 5.0  // 5 seconds
     private var previousMetrics: SystemMetrics?
     private let dbManager = DatabaseManager()
+    private var processHistory: [Int: [ProcessMemoryInfo]] = [:]  // pid -> history
+    private var previousProcesses: [Int: ProcessMemoryInfo] = [:]  // pid -> last snapshot
 
     init() {
         // Load recent history from database
@@ -97,6 +100,10 @@ class MetricsCollector: ObservableObject {
                         self.thrashingMetrics = thrashing
                     }
                 }
+
+                // Collect process information
+                let processes = try self.collectProcessMemory()
+                self.updateThrashingScores(processes: processes, isThrashing: self.thrashingMetrics?.isThrashing ?? false)
 
                 // Save to database
                 try? self.dbManager.saveMetrics(metrics)
@@ -255,6 +262,137 @@ class MetricsCollector: ObservableObject {
             }
         }
         return 0
+    }
+
+    private func collectProcessMemory() throws -> [ProcessMemoryInfo] {
+        let output = try runCommand("/bin/ps", arguments: ["-eo", "pid,pmem,rss,comm"])
+        let lines = output.components(separatedBy: "\n")
+        var processes: [ProcessMemoryInfo] = []
+        let now = Date()
+
+        // Skip header line
+        for line in lines.dropFirst() {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { continue }
+
+            let components = trimmed.components(separatedBy: .whitespaces)
+            guard components.count >= 4 else { continue }
+
+            guard let pid = Int(components[0]),
+                  let percentMem = Double(components[1]),
+                  let rss = Double(components[2]) else { continue }
+
+            // Get process name (everything after the first 3 components)
+            let name = components[3...].joined(separator: " ")
+
+            // Convert RSS (in KB) to MB
+            let memoryMB = rss / 1024.0
+
+            // Only track processes using more than 10MB
+            guard memoryMB > 10.0 else { continue }
+
+            let processInfo = ProcessMemoryInfo(
+                id: pid,
+                pid: pid,
+                name: name,
+                memoryMB: memoryMB,
+                percentMemory: percentMem,
+                timestamp: now
+            )
+
+            processes.append(processInfo)
+        }
+
+        return processes
+    }
+
+    private func updateThrashingScores(processes: [ProcessMemoryInfo], isThrashing: Bool) {
+        let now = Date()
+        var scores: [ProcessThrashingScore] = []
+
+        // Update process history
+        for process in processes {
+            if processHistory[process.pid] == nil {
+                processHistory[process.pid] = []
+            }
+
+            processHistory[process.pid]?.append(process)
+
+            // Keep only last 5 minutes of history (60 samples at 5s interval)
+            if let history = processHistory[process.pid], history.count > 60 {
+                processHistory[process.pid] = Array(history.suffix(60))
+            }
+        }
+
+        // Calculate thrashing scores
+        for process in processes {
+            guard let history = processHistory[process.pid], history.count > 1 else {
+                continue
+            }
+
+            // Calculate memory change over the last few samples
+            let recentHistory = Array(history.suffix(6))  // Last 30 seconds
+            guard recentHistory.count >= 2 else { continue }
+
+            let memoryChanges = zip(recentHistory.dropLast(), recentHistory.dropFirst()).map { prev, current in
+                abs(current.memoryMB - prev.memoryMB)
+            }
+
+            let avgMemoryChange = memoryChanges.reduce(0, +) / Double(memoryChanges.count)
+            let maxMemoryChange = memoryChanges.max() ?? 0
+
+            // Score calculation:
+            // - Higher score = more likely to be causing thrashing
+            // - Consider: memory volatility, current memory usage, and system thrashing state
+            var score = avgMemoryChange * 10.0  // Base score on average memory change
+
+            // Amplify score if system is thrashing
+            if isThrashing {
+                score *= 3.0
+            }
+
+            // Add weight for large processes
+            if process.memoryMB > 500 {
+                score *= 1.5
+            }
+
+            // Add weight for high volatility
+            if maxMemoryChange > 100 {
+                score *= 2.0
+            }
+
+            let memoryDelta = process.memoryMB - (previousProcesses[process.pid]?.memoryMB ?? process.memoryMB)
+
+            let thrashingScore = ProcessThrashingScore(
+                id: process.pid,
+                pid: process.pid,
+                name: process.name,
+                thrashingScore: score,
+                currentMemoryMB: process.memoryMB,
+                memoryDeltaMB: memoryDelta,
+                lastSeen: now
+            )
+
+            if score > 0.1 {  // Only include processes with meaningful scores
+                scores.append(thrashingScore)
+            }
+
+            previousProcesses[process.pid] = process
+        }
+
+        // Sort by score (descending) and take top 10
+        let topScores = scores.sorted(by: >).prefix(10)
+
+        // Clean up old process history (not seen in last 5 minutes)
+        let cutoffTime = now.addingTimeInterval(-300)
+        processHistory = processHistory.filter { pid, history in
+            guard let lastSeen = history.last?.timestamp else { return false }
+            return lastSeen >= cutoffTime
+        }
+
+        DispatchQueue.main.async {
+            self.topThrashingProcesses = Array(topScores)
+        }
     }
 
     private func loadRecentHistory() {

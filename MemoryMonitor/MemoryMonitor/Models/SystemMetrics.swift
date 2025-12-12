@@ -141,3 +141,34 @@ struct ThrashingMetrics {
         return "Low"
     }
 }
+
+struct ProcessMemoryInfo: Identifiable, Hashable {
+    let id: Int  // pid
+    let pid: Int
+    let name: String
+    let memoryMB: Double
+    let percentMemory: Double
+    let timestamp: Date
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(pid)
+    }
+
+    static func == (lhs: ProcessMemoryInfo, rhs: ProcessMemoryInfo) -> Bool {
+        lhs.pid == rhs.pid
+    }
+}
+
+struct ProcessThrashingScore: Identifiable, Comparable {
+    let id: Int  // pid
+    let pid: Int
+    let name: String
+    let thrashingScore: Double  // Weighted score based on memory changes and system thrashing
+    let currentMemoryMB: Double
+    let memoryDeltaMB: Double  // Change in memory usage
+    let lastSeen: Date
+
+    static func < (lhs: ProcessThrashingScore, rhs: ProcessThrashingScore) -> Bool {
+        lhs.thrashingScore < rhs.thrashingScore
+    }
+}
