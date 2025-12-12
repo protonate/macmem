@@ -14,6 +14,7 @@
 		AA0000010000000000000005 /* DatabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000005 /* DatabaseManager.swift */; };
 		AA0000010000000000000006 /* MetricGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000006 /* MetricGaugeView.swift */; };
 		AA0000010000000000000007 /* ChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000007 /* ChartView.swift */; };
+		AA0000010000000000000008 /* ThrashingProcessesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000020000000000000008 /* ThrashingProcessesView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,7 @@
 		AA0000020000000000000005 /* DatabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseManager.swift; sourceTree = "<group>"; };
 		AA0000020000000000000006 /* MetricGaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricGaugeView.swift; sourceTree = "<group>"; };
 		AA0000020000000000000007 /* ChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartView.swift; sourceTree = "<group>"; };
+		AA0000020000000000000008 /* ThrashingProcessesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThrashingProcessesView.swift; sourceTree = "<group>"; };
 		AA0000030000000000000001 /* MemoryMonitor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MemoryMonitor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000040000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA0000040000000000000002 /* MemoryMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MemoryMonitor.entitlements; sourceTree = "<group>"; };
@@ -83,6 +85,7 @@
 				AA0000020000000000000002 /* ContentView.swift */,
 				AA0000020000000000000006 /* MetricGaugeView.swift */,
 				AA0000020000000000000007 /* ChartView.swift */,
+				AA0000020000000000000008 /* ThrashingProcessesView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -171,6 +174,7 @@
 				AA0000010000000000000005 /* DatabaseManager.swift in Sources */,
 				AA0000010000000000000006 /* MetricGaugeView.swift in Sources */,
 				AA0000010000000000000007 /* ChartView.swift in Sources */,
+				AA0000010000000000000008 /* ThrashingProcessesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -64,6 +64,11 @@ struct ContentView: View {
 
                     Divider()
 
+                    // Top thrashing processes
+                    ThrashingProcessesView(processes: metricsCollector.topThrashingProcesses)
+
+                    Divider()
+
                     // Time-series charts
                     chartsSection()
                 }
